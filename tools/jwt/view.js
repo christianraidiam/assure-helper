@@ -1,132 +1,162 @@
 // tools/jwt/view.js
+// JWT → JSON with live decode, single bordered field (no double box), and basic highlighting
+
 import { state, saveState } from '../../app/state.js';
 import { decodeJWT } from '../../lib/jwt-utils.js';
-import { copy } from '../../app/ui.js';
 
+// Small HTML escaper
+const esc = (s='') => s
+  .replace(/&/g,'&amp;')
+  .replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;');
+
+/** Highlight the three JWT parts (header.payload.signature) */
+function highlightJWT(token) {
+  if (!token) return '';
+  const [h = '', p = '', s = ''] = token.split('.', 3);
+  const rest = token.slice((h + (p ? '.' + p : '')).length + (s ? 2 : 1)); // in case there are extra dots
+  const seg = (txt, cls) => `<span class="jwt-${cls}">${esc(txt)}</span>`;
+  const dot = `<span class="jwt-dot">.</span>`;
+  // Only show three segments; if anything else remains, show it plainly (rare)
+  return [
+    seg(h, 'header'),
+    p ? dot + seg(p, 'payload') : '',
+    s ? dot + seg(s, 'signature') : '',
+    rest ? esc(rest) : ''
+  ].join('');
+}
+
+/** Very lightweight JSON syntax highlighting */
+function highlightJSON(obj) {
+  if (obj == null) return '';
+  const json = JSON.stringify(obj, null, 2);
+  const html = esc(json)
+    // keys
+    .replace(/(^|\n)(\s*)\"([^"]+)\":/g,
+      (_, brk, sp, key) => `${brk}${sp}<span class="j-key">"${key}"</span>:`)
+    // strings (values)
+    .replace(/: \"([^"]*)\"/g,
+      (_, val) => `: <span class="j-str">"${esc(val)}"</span>`)
+    // numbers
+    .replace(/: (-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+      (_, num) => `: <span class="j-num">${num}</span>`)
+    // booleans
+    .replace(/: (true|false)/g,
+      (_, b) => `: <span class="j-bool">${b}</span>`)
+    // null
+    .replace(/: null/g, ': <span class="j-null">null</span>');
+  return html;
+}
+
+/** Render JWT tool */
 export async function render(root) {
   root.innerHTML = `
-    <section class="section" style="max-width:1200px;margin-inline:auto;">
-      <h1 style="text-align:center;margin-bottom:18px;">JWT → JSON</h1>
+    <section class="section" style="max-width:1100px;margin-inline:auto;">
+      <h1 style="text-align:center;font-size:44px;margin:0 0 18px;">JWT → JSON</h1>
 
-      <style>
-        .jwt-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        @media (max-width: 980px){.jwt-grid{grid-template-columns:1fr}}
-        .jwt-left{display:flex;flex-direction:column;gap:10px}
-        .jwt-status{background:#0e332f;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;color:var(--text)}
-        .jwt-status.valid{background:#0e2f1e;border-color:#1b6446}
-        .jwt-status.invalid{background:#3a1919;border-color:#6f2c2c}
-        .jwt-area{min-height:280px}
-        .panel{display:flex;flex-direction:column;gap:10px}
-        .panel-head{display:flex;align-items:center;justify-content:space-between}
-        .panel-title{color:var(--muted);font-weight:600;letter-spacing:.02em}
-        .json-pre{min-height:280px}
-        .tabbar{display:flex;gap:8px}
-      </style>
-
-      <div class="jwt-grid">
-        <div class="jwt-left">
-          <div class="panel-head">
-            <div class="panel-title">Encoded value (JWT)</div>
-            <div class="tabbar">
-              <button id="btn-decode" class="btn btn-primary">Decode</button>
-              <button id="btn-clear" class="btn btn-ghost">Clear</button>
-            </div>
+      <div class="jwt-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- LEFT: input -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="label" style="font-size:18px;">Encoded value (JWT)</div>
+            <button id="jwt-clear" class="btn btn-ghost">Clear</button>
           </div>
-          <textarea id="jwt-input" class="textarea jwt-area" placeholder="Paste a JWT here…">${state.jwt.token || ''}</textarea>
-          <div id="jwt-status" class="jwt-status">Paste a token to decode.</div>
+
+          <!-- Single bordered wrapper; textarea + overlay are borderless/transparent -->
+          <div class="code-field"
+               style="position:relative;border:1px solid var(--stroke);background:#08333a;border-radius:12px;">
+            <pre id="jwt-hl"
+                 aria-hidden="true"
+                 style="margin:0;white-space:pre-wrap;word-break:break-word;padding:12px;border:0;background:transparent;color:var(--text);opacity:.95;"></pre>
+            <textarea id="jwt-input"
+                      spellcheck="false"
+                      placeholder="Paste a JWT here…"
+                      style="position:absolute;inset:0;resize:vertical;width:100%;height:100%;
+                             border:0;outline:none;background:transparent;color:transparent;
+                             caret-color:var(--text);padding:12px;font:14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;"></textarea>
+          </div>
+
+          <div id="jwt-status" class="label" style="margin-top:10px;opacity:.8;">
+            Paste a token to decode.
+          </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">Decoded header</div>
-            <div class="tabbar">
-              <button id="copy-header" class="btn btn-ghost">Copy</button>
-            </div>
+        <!-- RIGHT: output -->
+        <div>
+          <div style="margin-bottom:12px;">
+            <div class="label" style="font-size:16px;margin-bottom:6px;">Decoded header</div>
+            <pre id="jwt-header"
+                 class="kv"
+                 style="min-height:120px;overflow:auto;"></pre>
           </div>
-          <pre id="out-header" class="kv json-pre empty">{ }</pre>
-
-          <div class="panel-head" style="margin-top:8px;">
-            <div class="panel-title">Decoded payload</div>
-            <div class="tabbar">
-              <button id="copy-payload" class="btn btn-ghost">Copy</button>
-            </div>
+          <div>
+            <div class="label" style="font-size:16px;margin-bottom:6px;">Decoded payload</div>
+            <pre id="jwt-payload"
+                 class="kv"
+                 style="min-height:220px;overflow:auto;"></pre>
           </div>
-          <pre id="out-payload" class="kv json-pre empty">{ }</pre>
         </div>
       </div>
     </section>
   `;
 
-  // Elements
-  const input = root.querySelector('#jwt-input');
-  const statusEl = root.querySelector('#jwt-status');
-  const outHeader = root.querySelector('#out-header');
-  const outPayload = root.querySelector('#out-payload');
+  const input   = root.querySelector('#jwt-input');
+  const overlay = root.querySelector('#jwt-hl');
+  const status  = root.querySelector('#jwt-status');
+  const outH    = root.querySelector('#jwt-header');
+  const outP    = root.querySelector('#jwt-payload');
+  const clearBtn= root.querySelector('#jwt-clear');
 
-  // Persist textarea + auto-decode (debounced)
-  let debounceT = null;
-  const scheduleDecode = () => {
-    clearTimeout(debounceT);
-    debounceT = setTimeout(decodeNow, 250); // small delay for smooth typing
-  };
-
-  const onInput = (e) => {
-    state.jwt.token = e.target.value;
-    saveState();
-    scheduleDecode();
-  };
-
-  input.addEventListener('input', onInput);
-  input.addEventListener('paste', () => scheduleDecode());
-
-  // Buttons
-  root.querySelector('#btn-clear').addEventListener('click', () => {
-    input.value = '';
-    state.jwt.token = '';
-    saveState();
-    setStatus('Paste a token to decode.', 'neutral');
-    setJson(outHeader, {});
-    setJson(outPayload, {});
-  });
-
-  root.querySelector('#btn-decode').addEventListener('click', () => decodeNow());
-  root.querySelector('#copy-header').addEventListener('click', () => copy(outHeader.textContent));
-  root.querySelector('#copy-payload').addEventListener('click', () => copy(outPayload.textContent));
-
-  // Decode on load if we already have a token
-  if ((state.jwt.token || '').trim()) decodeNow();
-
-  // Helpers
-  function setStatus(text, kind) {
-    statusEl.textContent = text;
-    statusEl.classList.remove('valid', 'invalid');
-    if (kind === 'valid') statusEl.classList.add('valid');
-    if (kind === 'invalid') statusEl.classList.add('invalid');
+  // Seed from saved state (keeps user work between reloads)
+  if (state?.jwt?.token) {
+    input.value = state.jwt.token;
+    overlay.innerHTML = highlightJWT(input.value);
   }
 
-  function setJson(preEl, obj) {
-    const pretty = JSON.stringify(obj, null, 2);
-    preEl.textContent = pretty;
-    preEl.classList.toggle('empty', pretty === '{ }' || pretty === '{}');
-  }
+  function renderDecode() {
+    const raw = input.value.trim();
+    state.jwt.token = raw;
+    saveState();
 
-  function decodeNow() {
-    const token = (input.value || '').trim();
-    if (!token) {
-      setStatus('Paste a token to decode.', 'neutral');
-      setJson(outHeader, {});
-      setJson(outPayload, {});
+    // Update JWT colored overlay
+    overlay.innerHTML = highlightJWT(raw);
+
+    if (!raw) {
+      status.textContent = 'Paste a token to decode.';
+      outH.innerHTML = '';
+      outP.innerHTML = '';
       return;
     }
+
     try {
-      const { header, payload } = decodeJWT(token); // decode (no signature verification)
-      setJson(outHeader, header || {});
-      setJson(outPayload, payload || {});
-      setStatus('Decoded successfully (signature not verified).', 'valid');
-    } catch (err) {
-      setJson(outHeader, {});
-      setJson(outPayload, {});
-      setStatus(`Invalid JWT: ${err && err.message ? err.message : String(err)}`, 'invalid');
+      const { header, payload } = decodeJWT(raw);
+      status.textContent = 'Decoded successfully.';
+      outH.innerHTML = highlightJSON(header);
+      outP.innerHTML = highlightJSON(payload);
+    } catch (e) {
+      status.textContent = 'Invalid JWT: ' + (e?.message || e);
+      outH.innerHTML = '';
+      outP.innerHTML = '';
     }
   }
+
+  // Live decoding and highlighting
+  input.addEventListener('input', renderDecode);
+
+  // Keep scroll of overlay and textarea in sync
+  input.addEventListener('scroll', () => {
+    overlay.scrollTop  = input.scrollTop;
+    overlay.scrollLeft = input.scrollLeft;
+  });
+
+  // Clear
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    renderDecode();
+    input.focus();
+  });
+
+  // Initial pass
+  renderDecode();
 }
+

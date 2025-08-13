@@ -30,3 +30,59 @@ hr.sep {
 .toolbar button {
   width: 100%;
 }
+
+/* JWT part highlighting */
+.jwt-header {
+  color: #7dd3fc; /* cyan-300 */
+}
+.jwt-payload {
+  color: #86efac; /* green-300 */
+}
+.jwt-signature {
+  color: #fca5a5; /* red-300 */
+}
+.jwt-dot {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* JSON syntax highlighting */
+.j-key {
+  color: #22d3ee; /* cyan-400 */
+}
+.j-str {
+  color: #a7f3d0; /* emerald-200 */
+}
+.j-num {
+  color: #fde68a; /* amber-200 */
+}
+.j-bool {
+  color: #fca5a5; /* red-300 */
+}
+.j-null {
+  color: #c4b5fd; /* violet-300 */
+}
+
+/* Shared code field styles */
+.code-field {
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  min-height: 180px;
+}
+
+/* Scrollbar styling (optional, matches dark theme) */
+.code-field pre::-webkit-scrollbar,
+.code-field textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.code-field pre::-webkit-scrollbar-thumb,
+.code-field textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.code-field pre::-webkit-scrollbar-thumb:hover,
+.code-field textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
