@@ -1,9 +1,37 @@
 import { state, saveState } from '../../app/state.js';
 import { safeParse, pretty } from '../../lib/json-utils.js';
-import { listPaths, listMethods, listResponseStatuses, getJsonSchema, resolveLocalRef } from '../../lib/schema-utils.js';
+import { listPaths, listMethods, listResponseStatuses, getJsonSchema, resolveLocalRef, collectRestrictions } from '../../lib/schema-utils.js';
 import { validate } from '../../lib/validate.js';
 
 let specObj = null;
+let yamlModulePromise = null;
+
+// Parse JSON first; if that fails, lazily load a YAML parser from CDN.
+async function parseSpecText(rawText) {
+  if (!rawText) throw new Error('Provide a URL or paste a spec.');
+  try {
+    return JSON.parse(rawText);
+  } catch (_) {
+    // fall through to YAML
+  }
+
+  if (!yamlModulePromise) {
+    yamlModulePromise = import('https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.mjs')
+      .catch(err => {
+        yamlModulePromise = null;
+        throw new Error('Failed to load YAML parser: ' + err.message);
+      });
+  }
+
+  const yaml = await yamlModulePromise;
+  try {
+    return yaml.load(rawText);
+  } catch (err) {
+    throw new Error('Spec is not valid JSON or YAML: ' + (err?.message || err));
+  }
+}
+
+const esc = (s='')=>s.replace(/[&<>]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 export async function render(root){
   root.innerHTML = `
@@ -57,8 +85,13 @@ export async function render(root){
           <textarea id="payload" class="textarea" placeholder="{}">${state.openapi.payload||''}</textarea>
         </div>
         <div class="col">
-          <label class="label">Schema Preview</label>
-          <pre id="schema" class="kv empty">—</pre>
+          <div class="schema-header">
+            <label class="label" style="margin-bottom:0;">Schema Preview</label>
+          </div>
+          <div id="schema-box" class="schema-box">
+            <pre id="schema" class="kv empty schema-fixed">—</pre>
+            <button id="schema-resize" class="schema-resize" type="button" aria-pressed="false" title="Expand/Collapse schema preview"></button>
+          </div>
         </div>
       </div>
 
@@ -67,6 +100,7 @@ export async function render(root){
       </div>
 
       <div id="result" class="kv empty">Results will appear here.</div>
+      <div id="restrictions" class="kv empty" style="margin-top:10px;">Business [Restrição] notes will appear here.</div>
     </section>
   `;
 
@@ -78,8 +112,24 @@ export async function render(root){
   const statusEl = document.getElementById('status-code');
   const payloadEl = document.getElementById('payload');
   const schemaEl = document.getElementById('schema');
+  const schemaBox = document.getElementById('schema-box');
+  const schemaResize = document.getElementById('schema-resize');
   const statusBox = document.getElementById('status');
   const resultEl = document.getElementById('result');
+  const restrictionsEl = document.getElementById('restrictions');
+
+  const setSchemaExpanded = (flag)=>{
+    if(!schemaBox || !schemaResize) return;
+    schemaBox.classList.toggle('expanded', !!flag);
+    schemaResize.setAttribute('aria-pressed', flag ? 'true' : 'false');
+  };
+  setSchemaExpanded(false);
+
+  if(schemaResize){
+    schemaResize.addEventListener('click', ()=>{
+      setSchemaExpanded(!schemaBox.classList.contains('expanded'));
+    });
+  }
 
   // restore selection
   const restoreSelects = ()=>{
@@ -93,7 +143,7 @@ export async function render(root){
   function updateMethods(){
     methodEl.innerHTML = '<option value="">—</option>';
     statusEl.innerHTML = '<option value="200">200</option>';
-    schemaEl.className='kv empty'; schemaEl.textContent='—';
+    schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='—';
     if(!pathEl.value) return;
 
     const methods = listMethods(specObj, pathEl.value);
@@ -116,16 +166,17 @@ export async function render(root){
     // resolve single depth local $ref
     if(schema && schema.$ref){ resolved = resolveLocalRef(specObj, schema); }
     if(resolved){
-      schemaEl.className='kv';
+      schemaEl.className='kv schema-fixed';
       schemaEl.textContent = JSON.stringify(resolved, null, 2);
     }else{
-      schemaEl.className='kv empty'; schemaEl.textContent='No JSON schema found for this selection.';
+      schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='No JSON schema found for this selection.';
     }
   }
 
   document.getElementById('clear').addEventListener('click', ()=>{
     specObj=null; urlEl.value=''; textEl.value=''; pathEl.innerHTML='<option value="">—</option>'; methodEl.innerHTML='<option value="">—</option>';
-    statusEl.innerHTML='<option value="200">200</option>'; schemaEl.className='kv empty'; schemaEl.textContent='—'; resultEl.className='kv empty'; resultEl.textContent='Results will appear here.';
+    statusEl.innerHTML='<option value="200">200</option>'; schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='—'; setSchemaExpanded(false);
+    resultEl.className='kv empty'; resultEl.textContent='Results will appear here.';
     statusBox.textContent='Cleared. Load a spec to select endpoints.';
   });
 
@@ -139,15 +190,7 @@ export async function render(root){
         if(!res.ok) throw new Error('Failed to fetch spec: '+res.status);
         text = await res.text();
       }
-      if(!text) throw new Error('Provide a URL or paste a spec.');
-      // try JSON first
-      let spec;
-      try{ spec = JSON.parse(text); }
-      catch{
-        // very tiny YAML fallback (non-strict): try to convert YAML to JSON via a naive approach (for most simple YAML files).
-        // Note: for complex YAML, consider including a small YAML parser later.
-        throw new Error('Spec is not valid JSON. Please paste JSON for now.');
-      }
+      const spec = await parseSpecText(text.trim());
       specObj = spec; state.openapi.spec = url; saveState();
       statusBox.textContent = 'Spec loaded. Select endpoint/method/mode.';
       restoreSelects();
@@ -176,11 +219,37 @@ export async function render(root){
     if(!resolved){
       resultEl.className='kv empty';
       resultEl.textContent='No JSON schema for this selection.';
+      schemaBox.classList.remove('expanded');
+      if(schemaResize) schemaResize.setAttribute('aria-pressed','false');
+      restrictionsEl.className='kv empty';
+      restrictionsEl.textContent='No [Restrição] notes for this selection.';
       return;
     }
-    const res = validate(parsed.value, resolved, '$');
+    const res = validate(parsed.value, resolved, '$', specObj);
     resultEl.className='kv';
     resultEl.textContent = JSON.stringify(res, null, 2);
+
+    const restrictions = collectRestrictions(specObj, resolved, '$');
+    if(restrictions.length){
+      restrictionsEl.className='kv';
+      const list = restrictions.map(r=>`
+        <div class="restriction-item">
+          <div class="restriction-path">${esc(r.path)}</div>
+          <div class="restriction-body">
+            <div class="restriction-field">${esc(r.field||'')}</div>
+            <div class="restriction-text">[Restrição] ${esc(r.restriction||'')}</div>
+          </div>
+        </div>
+      `).join('');
+      restrictionsEl.innerHTML = `
+        <div class="restriction-heading">Business rules (manual review)</div>
+        <div class="restriction-note">[Restrição] items are not auto-validated. Review and apply these rules for the selected endpoint.</div>
+        <div class="restrictions-list">${list}</div>
+      `;
+    }else{
+      restrictionsEl.className='kv empty';
+      restrictionsEl.textContent='No [Restrição] notes for this selection.';
+    }
   });
 
   // If there is an existing spec in state, try to refocus selections
