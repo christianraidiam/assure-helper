@@ -31,6 +31,12 @@ hr.sep {
   width: 100%;
 }
 
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
 /* JWT part highlighting */
 .jwt-header {
   color: #7dd3fc; /* cyan-300 */
@@ -85,4 +91,81 @@ hr.sep {
 .code-field pre::-webkit-scrollbar-thumb:hover,
 .code-field textarea::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Schema preview */
+.schema-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.schema-box .schema-fixed {
+  max-height: 220px;
+  overflow: auto;
+}
+.schema-box.expanded .schema-fixed {
+  max-height: none;
+}
+.schema-box {
+  position: relative;
+}
+.schema-resize {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--stroke);
+  background: linear-gradient(135deg, transparent 50%, var(--stroke) 50%), linear-gradient(45deg, transparent 50%, var(--stroke) 50%);
+  background-size: 50% 50%;
+  background-repeat: no-repeat;
+  background-position: 0 100%, 100% 0;
+  cursor: pointer;
+  opacity: 0.7;
+  z-index: 2;
+}
+.schema-resize:hover {
+  opacity: 1;
+}
+
+/* Restrictions presentation */
+.restriction-heading {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+.restriction-note {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.restrictions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.restriction-item {
+  padding: 4px 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  background: #08333a;
+}
+.restriction-path {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #9bb7b3;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.restriction-field {
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--text);
+}
+.restriction-text {
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.2;
+  font-size: 12px;
 }
