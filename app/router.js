@@ -6,6 +6,7 @@ const moduleCache = new Map();
 /** Map route -> dynamic import path */
 const ROUTES = {
   navigator: () => import('../tools/navigator/view.js'),
+  flow:      () => import('../tools/flow/view.js'),
   jwt:       () => import('../tools/jwt/view.js'),
   json:      () => import('../tools/json-viewer/view.js'),
   openapi:   () => import('../tools/openapi/view.js'),
