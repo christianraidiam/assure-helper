@@ -40,7 +40,7 @@ export async function render(root){
 
       <div class="schema-header" style="margin-top:0;">
         <h2 style="margin:0;color:var(--text);font-size:20px;">Board</h2>
-        <span style="color:var(--muted);font-size:13px;">Newest first · Click card JSON to expand</span>
+        <span style="color:var(--muted);font-size:13px;">Oldest first · Click card JSON to expand</span>
       </div>
       <div id="flow-board" class="flow-board"></div>
     </section>
@@ -105,7 +105,8 @@ export async function render(root){
 
   function addCard(parsed){
     const tag = `Item ${state.flow.cards.length+1}`;
-    state.flow.cards = [{ tag, type: parsed.type, json: parsed.json, raw: parsed.raw, header: parsed.header||null }, ...(state.flow.cards||[])];
+    const nextCard = { tag, type: parsed.type, json: parsed.json, raw: parsed.raw, header: parsed.header||null };
+    state.flow.cards = [...(state.flow.cards||[]), nextCard];
     saveState();
     refreshBoard();
   }
