@@ -10,6 +10,7 @@ const ROUTES = {
   jwt:       () => import('../tools/jwt/view.js'),
   json:      () => import('../tools/json-viewer/view.js'),
   openapi:   () => import('../tools/openapi/view.js'),
+  csr:       () => import('../tools/csr/view.js'),
 };
 
 /** Parse current hash (#/route) -> route key */

@@ -4,7 +4,8 @@ export const state = {
   jwt: { token:'' },
   json: { input:'' },
   openapi: { spec:'', path:'', method:'get', mode:'response', status:'200', payload:'' },
-  flow: { input:'', cards:[] }
+  flow: { input:'', cards:[] },
+  csr: { input:'' }
 };
 export function loadState(){
   try{ Object.assign(state, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch{}
