@@ -6,7 +6,18 @@ import { safeParse } from '../../lib/json-utils.js';
 const esc = (s='')=>String(s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
 function renderCardJSON(json){
-  try{ return JSON.stringify(json, null, 2); }catch{ return ''; }
+  try{ return highlightJSON(json); }catch{ return ''; }
+}
+
+function highlightJSON(obj){
+  if (obj == null) return '';
+  const json = JSON.stringify(obj, null, 2);
+  return esc(json)
+    .replace(/(^|\n)(\s*)\"([^"]+)\":/g, (_, brk, sp, key) => `${brk}${sp}<span class="j-key">"${key}"</span>:`)
+    .replace(/: \"([^"]*)\"/g, (_, val) => `: <span class="j-str">"${esc(val)}"</span>`)
+    .replace(/: (-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, (_, num) => `: <span class="j-num">${num}</span>`)
+    .replace(/: (true|false)/g, (_, b) => `: <span class="j-bool">${b}</span>`)
+    .replace(/: null/g, ': <span class="j-null">null</span>');
 }
 
 export async function render(root){
@@ -55,9 +66,13 @@ export async function render(root){
   const previewType = root.querySelector('#flow-preview-type');
   const boardEl = root.querySelector('#flow-board');
 
-  function setPreview(type, jsonText, msgClass='kv'){
+  function setPreview(type, content, msgClass='kv', asHTML=false){
     previewEl.className = `${msgClass} flow-preview`;
-    previewEl.textContent = jsonText;
+    if(asHTML){
+      previewEl.innerHTML = content;
+    } else {
+      previewEl.textContent = content;
+    }
     if(type){
       previewType.style.display='inline-flex';
       previewType.textContent = type;
@@ -89,7 +104,7 @@ export async function render(root){
       return;
     }
     boardEl.innerHTML = list.map((card, idx)=>{
-      const jsonText = renderCardJSON(card.json);
+      const jsonHTML = renderCardJSON(card.json);
       return `
         <div class="flow-card" data-idx="${idx}">
           <div class="flow-card-top">
@@ -100,7 +115,7 @@ export async function render(root){
             <button class="btn btn-ghost btn-xs" data-action="copy" data-idx="${idx}">Copy JSON</button>
             <button class="btn btn-ghost btn-xs" data-action="delete" data-idx="${idx}">Delete</button>
           </div>
-          <pre class="kv flow-json" data-idx="${idx}">${esc(jsonText)}</pre>
+          <pre class="kv flow-json" data-idx="${idx}">${jsonHTML}</pre>
         </div>
       `;
     }).join('');
@@ -126,7 +141,7 @@ export async function render(root){
     }
     statusEl.className='kv';
     statusEl.textContent = parsed.type === 'JWT' ? 'Decoded JWT → payload shown below.' : 'Valid JSON parsed.';
-    setPreview(parsed.type, renderCardJSON(parsed.json));
+    setPreview(parsed.type, renderCardJSON(parsed.json), 'kv', true);
     return parsed;
   }
 
@@ -177,7 +192,7 @@ export async function render(root){
   // Initial paint
   const initParsed = updatePreview();
   if(initParsed.ok){
-    setPreview(initParsed.type, renderCardJSON(initParsed.json));
+    setPreview(initParsed.type, renderCardJSON(initParsed.json), 'kv', true);
   }
   refreshBoard();
 }
