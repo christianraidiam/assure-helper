@@ -69,7 +69,8 @@ async function parseSpecText(rawText) {
 export async function render(root){
   root.innerHTML = `
     <section class="section" style="max-width:1300px;margin-inline:auto;">
-      <h1>OpenAPI Validator (payload only)</h1>
+      <h1 style="text-align:center;">OpenAPI Validator</h1>
+      <p class="hero-sub" style="margin-top:4px;text-align:center;">Load a spec, pick an endpoint, validate payloads, and review security and business rules.</p>
 
       <div class="row">
         <div class="col">
@@ -114,6 +115,21 @@ export async function render(root){
 
       <div class="row">
         <div class="col">
+          <div id="security-panel" class="security-card empty">
+            <div class="security-card-header">
+              <div>
+                <div class="label" style="margin-bottom:2px;">Security</div>
+                <div class="security-summary" id="security-summary">No security requirements</div>
+              </div>
+              <button id="security-toggle" class="btn btn-ghost btn-xs" type="button" aria-pressed="true">Hide</button>
+            </div>
+            <div id="security-body" class="security-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
           <label class="label">Payload JSON</label>
           <textarea id="payload" class="textarea" placeholder="{}">${state.openapi.payload||''}</textarea>
         </div>
@@ -125,10 +141,6 @@ export async function render(root){
             <pre id="schema" class="kv empty schema-fixed">—</pre>
             <button id="schema-resize" class="schema-resize" type="button" aria-pressed="false" title="Expand/Collapse schema preview"></button>
           </div>
-          <div class="schema-header" style="margin-top:14px;">
-            <label class="label" style="margin-bottom:0;">Security</label>
-          </div>
-          <div id="security-panel" class="kv empty">Security requirements will appear here.</div>
         </div>
       </div>
 
@@ -155,6 +167,9 @@ export async function render(root){
   const resultEl = document.getElementById('result');
   const restrictionsEl = document.getElementById('restrictions');
   const securityEl = document.getElementById('security-panel');
+  const securitySummaryEl = document.getElementById('security-summary');
+  const securityBodyEl = document.getElementById('security-body');
+  const securityToggle = document.getElementById('security-toggle');
 
   const setSchemaExpanded = (flag)=>{
     if(!schemaBox || !schemaResize) return;
@@ -216,7 +231,11 @@ export async function render(root){
     specObj=null; urlEl.value=''; textEl.value=''; pathEl.innerHTML='<option value="">—</option>'; methodEl.innerHTML='<option value="">—</option>';
     statusEl.innerHTML='<option value="200">200</option>'; schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='—'; setSchemaExpanded(false);
     resultEl.className='kv empty'; resultEl.textContent='Results will appear here.';
-    if(securityEl){ securityEl.className='kv empty'; securityEl.textContent='Security requirements will appear here.'; }
+    if(securityEl){
+      securityEl.className='security-card empty';
+      securitySummaryEl.textContent='No security requirements';
+      securityBodyEl.innerHTML='';
+    }
     statusBox.textContent='Cleared. Load a spec to select endpoints.';
   });
 
@@ -292,6 +311,8 @@ export async function render(root){
       restrictionsEl.className='kv empty';
       restrictionsEl.textContent='No [Restrição] notes for this selection.';
     }
+
+    renderSecurity();
   });
 
   // If there is an existing spec in state, try to refocus selections
@@ -302,14 +323,16 @@ export async function render(root){
       return;
     }
     if(!specObj || !pathEl.value || !methodEl.value){
-      securityEl.className='kv empty';
-      securityEl.textContent='Select endpoint/method to see security.';
+      securityEl.className='security-card empty';
+      securitySummaryEl.textContent='Select endpoint/method to see security.';
+      securityBodyEl.innerHTML='';
       return;
     }
     const sec = getSecurity(specObj, pathEl.value, methodEl.value);
     if(!sec || sec.length===0){
-      securityEl.className='kv empty';
-      securityEl.textContent='No security requirements (public).';
+      securityEl.className='security-card empty';
+      securitySummaryEl.textContent='No security requirements (public).';
+      securityBodyEl.innerHTML='';
       return;
     }
     const blocks = sec.map((req, idx)=>{
@@ -335,10 +358,20 @@ export async function render(root){
       }).join('');
       return `<div class="security-block"><div class="security-heading">Requirement set ${idx+1}</div>${items}</div>`;
     }).join('');
-    securityEl.className='kv security-panel';
-    securityEl.innerHTML = `
+    securityEl.className='security-card';
+    const summaryScopes = sec.flatMap(s=>Object.values(s).flat()).flatMap(()=>[]); // placeholder if needed
+    securitySummaryEl.textContent = 'Security required';
+    securityBodyEl.innerHTML = `
       <div class="security-note">Any one of the following requirement sets can authorize this call:</div>
       <div class="security-sets">${blocks}</div>
     `;
+  }
+
+  if(securityToggle){
+    securityToggle.addEventListener('click', ()=>{
+      const bodyVisible = !securityBodyEl.classList.toggle('collapsed');
+      securityToggle.textContent = bodyVisible ? 'Hide' : 'Show';
+      securityToggle.setAttribute('aria-pressed', bodyVisible ? 'true' : 'false');
+    });
   }
 }

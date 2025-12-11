@@ -3,7 +3,8 @@ import { state, saveState } from '../../app/state.js';
 export async function render(outlet){
   outlet.innerHTML = `
     <section class="section">
-      <h1>Conformance Suite Navigator</h1>
+      <h1 style="text-align:center;">Conformance Suite Navigator</h1>
+      <p class="hero-sub" style="margin-top:4px;text-align:center;">Jump to Conformance Suite logs or plans by suite, type, and ID.</p>
 
       <!-- make this row stacked -->
       <div class="row stack">

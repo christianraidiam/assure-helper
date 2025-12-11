@@ -380,6 +380,33 @@ hr.sep {
 .flow-auth {
   box-shadow: 0 0 0 1px rgba(91,255,197,0.4);
 }
+
+.security-card {
+  margin-top: 14px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(9,44,52,0.65);
+}
+.security-card.empty {
+  background: rgba(255,255,255,0.02);
+  border-style: dashed;
+}
+.security-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.security-summary {
+  color: var(--text);
+  font-weight: 700;
+}
+.security-body.collapsed {
+  display: none;
+}
 /* Restrictions presentation */
 .restriction-heading {
   font-weight: 700;
