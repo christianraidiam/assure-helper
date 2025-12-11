@@ -104,7 +104,6 @@ export async function render(root){
           </div>
           <div id="json-status" class="status-bar empty" style="display:none;">Waiting for input…</div>
           <div class="toolbar" style="margin-top:8px;">
-            <button id="validate" class="btn btn-primary">Validate</button>
             <button id="beautify" class="btn btn-ghost">Beautify</button>
             <button id="copy" class="btn btn-ghost">Copy</button>
             <button id="clear" class="btn btn-ghost">Clear</button>
@@ -150,6 +149,15 @@ export async function render(root){
     out.innerHTML = `<ul class="tree-ul root">${createTree(value, search)}</ul>`;
   };
 
+  const scrollFirstMatch = ()=>{
+    const term = searchEl.value.trim();
+    if(!term) return;
+    const first = out.querySelector('.match');
+    if(first && typeof first.scrollIntoView === 'function'){
+      first.scrollIntoView({ block:'center', behavior:'smooth' });
+    }
+  };
+
   const handleValidate = ()=>{
     const res = safeParse(input.value.trim());
     if(!res.ok){
@@ -165,6 +173,7 @@ export async function render(root){
     setMetrics(`${(size/1024).toFixed(1)} KB · ${Object.keys(res.value||{}).length} top-level keys`);
     setStatus(true, 'Valid JSON');
     renderTree(res.value, searchEl.value.trim());
+    scrollFirstMatch();
     return res.value;
   };
 
@@ -182,8 +191,6 @@ export async function render(root){
     setMetrics('');
     setBreadcrumb('', true);
   });
-
-  document.getElementById('validate').addEventListener('click', handleValidate);
 
   document.getElementById('beautify').addEventListener('click', ()=>{
     const res = safeParse(input.value.trim());
@@ -203,6 +210,7 @@ export async function render(root){
     const res = safeParse(input.value.trim());
     if(!res.ok) return;
     renderTree(res.value, searchEl.value.trim());
+    scrollFirstMatch();
   });
 
   document.getElementById('collapse-all').addEventListener('click', ()=>{
