@@ -179,6 +179,125 @@ hr.sep {
   opacity: 1;
 }
 
+.status-bar {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255,255,255,0.03);
+}
+.status-bar.ok {
+  color: #6bffd6;
+  border-color: rgba(66,255,189,0.5);
+  background: rgba(66,255,189,0.08);
+}
+.status-bar.error {
+  color: #ff9b9b;
+  border-color: rgba(255,120,120,0.4);
+  background: rgba(255,120,120,0.08);
+}
+
+.tree-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+}
+.tree-ul.root { padding-left: 0; }
+.tree-li { margin: 0; padding: 0; }
+.tree-ul.collapsed { display: none; }
+.tree-row {
+  margin-left: 0;
+  line-height: 1.08;
+  padding: 4px 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tree-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 0px 1px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+.tree-key:hover {
+  background: rgba(255,255,255,0.05);
+}
+.tree-key .key.match {
+  color: #7bffe0;
+}
+.caret {
+  color: var(--muted);
+  font-size: 12px;
+}
+.caret.open {
+  color: #7bffe0;
+}
+.tree-children { margin-left: 10px; }
+.tree-children.collapsed { display: none; }
+.tree-child { margin: 0; }
+.tree-leaf {
+  color: var(--text);
+}
+.leaf-key { color: var(--text); font-weight: 600; font-size: 12px; }
+.leaf-sep { color: var(--muted); margin: 0 2px; }
+.leaf-val { color: var(--text); }
+.leaf-bullet {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  margin-right: 6px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.45);
+}
+.leaf-line {
+  display: inline;
+}
+.tree-children {
+  padding-left: 0;
+  margin-left: 0;
+}
+.tree-row.leaf {
+  padding: 0;
+}
+.json-tree {
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.1;
+  padding: 6px !important;
+}
+.match {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 8px rgba(66, 255, 189, 0.6);
+  color: #a4ffe4;
+  font-weight: 700;
+}
+.node-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.12);
+}
+.node-icon.array {
+  border-color: #9ec6ff;
+  background: rgba(158,198,255,0.2);
+}
+.node-icon.object {
+  border-color: #9effd4;
+  background: rgba(158,255,212,0.2);
+}
+.breadcrumb {
+  font-size: 12px;
+}
 .security-panel {
   background: rgba(9,44,52,0.7);
 }

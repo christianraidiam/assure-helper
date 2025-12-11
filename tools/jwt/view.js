@@ -52,7 +52,7 @@ function highlightJSON(obj) {
 /** Render JWT tool */
 export async function render(root) {
   root.innerHTML = `
-    <section class="section" style="max-width:1100px;margin-inline:auto;">
+    <section class="section" style="max-width:1300px;margin-inline:auto;">
       <h1 style="text-align:center;font-size:44px;margin:0 0 18px;">JWT → JSON</h1>
 
       <div class="jwt-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">

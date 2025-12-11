@@ -52,7 +52,7 @@ body::before {
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto 40px;
   padding: 22px 20px 32px;
 }
@@ -137,9 +137,10 @@ h1 {
   border-radius: 16px;
   box-shadow: var(--shadow);
   padding: 20px;
-  margin: 18px 0;
+  margin: 18px auto;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .row {
