@@ -14,8 +14,11 @@ export async function render(root){
 
   root.innerHTML = `
     <section class="section" style="max-width:1200px;margin-inline:auto;">
-      <h1 style="text-align:center;font-size:36px;margin:0 0 16px;">Flow Board</h1>
-      <p style="color:var(--muted);text-align:center;margin-top:0;margin-bottom:18px;">Decode JWTs or parse JSON, then pin them as tagged cards in order.</p>
+      <div class="hero-block">
+        <span class="hero-pill">Flow Toolkit · Chronological</span>
+        <h1 class="hero-title">Flow Board</h1>
+        <p class="hero-sub">Decode JWTs or parse JSON, then pin them as tagged cards in order.</p>
+      </div>
 
       <div class="row">
         <div class="col" style="min-width:320px;">
@@ -40,7 +43,7 @@ export async function render(root){
 
       <div class="schema-header" style="margin-top:0;">
         <h2 style="margin:0;color:var(--text);font-size:20px;">Board</h2>
-        <span style="color:var(--muted);font-size:13px;">Oldest first · Click card JSON to expand</span>
+        <span class="hero-pill soft">Oldest first · Click card JSON to expand</span>
       </div>
       <div id="flow-board" class="flow-board"></div>
     </section>
