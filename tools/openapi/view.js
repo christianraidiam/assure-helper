@@ -15,6 +15,29 @@ const highlightJSON = (obj)=>{
     .replace(/: null/g, ': <span class="j-null">null</span>');
 };
 
+function getSecurity(spec, path, method){
+  if(!spec || !path || !method) return [];
+  const op = spec?.paths?.[path]?.[method.toLowerCase()];
+  if(op && Array.isArray(op.security)) return op.security;
+  if(Array.isArray(spec.security)) return spec.security;
+  return [];
+}
+
+function describeSecurity(spec, req){
+  const schemes = spec?.components?.securitySchemes || {};
+  return Object.entries(req||{}).map(([name, scopes])=>{
+    const def = schemes[name] || {};
+    const type = def.type || 'unknown';
+    const description = def.description || '';
+    const flows = def.flows ? Object.entries(def.flows).map(([flowName, flowDef])=>({
+      name: flowName,
+      scopes: Object.keys(flowDef?.scopes||{}),
+      description: flowDef?.description || ''
+    })) : [];
+    return { name, type, scopes: scopes||[], flows, description };
+  });
+}
+
 let specObj = null;
 let yamlModulePromise = null;
 
@@ -102,6 +125,10 @@ export async function render(root){
             <pre id="schema" class="kv empty schema-fixed">—</pre>
             <button id="schema-resize" class="schema-resize" type="button" aria-pressed="false" title="Expand/Collapse schema preview"></button>
           </div>
+          <div class="schema-header" style="margin-top:14px;">
+            <label class="label" style="margin-bottom:0;">Security</label>
+          </div>
+          <div id="security-panel" class="kv empty">Security requirements will appear here.</div>
         </div>
       </div>
 
@@ -127,6 +154,7 @@ export async function render(root){
   const statusBox = document.getElementById('status');
   const resultEl = document.getElementById('result');
   const restrictionsEl = document.getElementById('restrictions');
+  const securityEl = document.getElementById('security-panel');
 
   const setSchemaExpanded = (flag)=>{
     if(!schemaBox || !schemaResize) return;
@@ -181,12 +209,14 @@ export async function render(root){
     }else{
       schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='No JSON schema found for this selection.';
     }
+    renderSecurity();
   }
 
   document.getElementById('clear').addEventListener('click', ()=>{
     specObj=null; urlEl.value=''; textEl.value=''; pathEl.innerHTML='<option value="">—</option>'; methodEl.innerHTML='<option value="">—</option>';
     statusEl.innerHTML='<option value="200">200</option>'; schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='—'; setSchemaExpanded(false);
     resultEl.className='kv empty'; resultEl.textContent='Results will appear here.';
+    if(securityEl){ securityEl.className='kv empty'; securityEl.textContent='Security requirements will appear here.'; }
     statusBox.textContent='Cleared. Load a spec to select endpoints.';
   });
 
@@ -204,6 +234,7 @@ export async function render(root){
       specObj = spec; state.openapi.spec = url; saveState();
       statusBox.textContent = 'Spec loaded. Select endpoint/method/mode.';
       restoreSelects();
+      renderSecurity();
     }catch(e){
       statusBox.textContent = 'Error: ' + e.message;
     }
@@ -238,6 +269,7 @@ export async function render(root){
     const res = validate(parsed.value, resolved, '$', specObj);
     resultEl.className='kv';
     resultEl.innerHTML = highlightJSON(res);
+    renderSecurity();
 
     const restrictions = collectRestrictions(specObj, resolved, '$');
     if(restrictions.length){
@@ -264,4 +296,49 @@ export async function render(root){
 
   // If there is an existing spec in state, try to refocus selections
   if(state.openapi.spec){ document.getElementById('status').textContent='Spec URL saved. Click "Load / Parse" to reload.'; }
+
+  function renderSecurity(){
+    if(!securityEl){
+      return;
+    }
+    if(!specObj || !pathEl.value || !methodEl.value){
+      securityEl.className='kv empty';
+      securityEl.textContent='Select endpoint/method to see security.';
+      return;
+    }
+    const sec = getSecurity(specObj, pathEl.value, methodEl.value);
+    if(!sec || sec.length===0){
+      securityEl.className='kv empty';
+      securityEl.textContent='No security requirements (public).';
+      return;
+    }
+    const blocks = sec.map((req, idx)=>{
+      const schemes = describeSecurity(specObj, req);
+      const items = schemes.map(s=>{
+        const scopes = (s.scopes&&s.scopes.length)
+          ? s.scopes.map(sc=>`<span class="scope-chip">${esc(sc)}</span>`).join(' ')
+          : '<span class="scope-chip muted">No scopes required</span>';
+        const desc = s.description || (s.flows?.find(f=>f.description)?.description) || '';
+        return `
+          <div class="security-scheme">
+            <div class="security-row">
+              <span class="grant-badge">${esc(s.name)}</span>
+              <span class="badge badge-ghost">${esc(s.type)}</span>
+            </div>
+            ${desc ? `<div class="security-desc">${esc(desc)}</div>` : ''}
+            <div class="security-row scopes-row">
+              <span class="label" style="margin:0;font-size:11px;">Scopes</span>
+              <div class="scope-list">${scopes}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return `<div class="security-block"><div class="security-heading">Requirement set ${idx+1}</div>${items}</div>`;
+    }).join('');
+    securityEl.className='kv security-panel';
+    securityEl.innerHTML = `
+      <div class="security-note">Any one of the following requirement sets can authorize this call:</div>
+      <div class="security-sets">${blocks}</div>
+    `;
+  }
 }

@@ -179,6 +179,88 @@ hr.sep {
   opacity: 1;
 }
 
+.security-panel {
+  background: rgba(9,44,52,0.7);
+}
+.security-note {
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.security-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.security-block {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.02);
+}
+.security-heading {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+.security-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.security-scheme {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.security-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.scopes-row {
+  justify-content: flex-start;
+}
+.scope-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.scope-chip {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: rgba(66,255,189,0.08);
+  color: #7bffe0;
+  font-weight: 700;
+  font-size: 12px;
+}
+.scope-chip.muted {
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+}
+.grant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(66,255,189,0.2);
+  border: 1px solid rgba(66,255,189,0.5);
+  color: #6bffd6;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.flow-badge {
+  background: rgba(66,255,189,0.18);
+}
+.flow-client {
+  box-shadow: 0 0 0 1px rgba(66,255,189,0.6);
+}
+.flow-auth {
+  box-shadow: 0 0 0 1px rgba(91,255,197,0.4);
+}
 /* Restrictions presentation */
 .restriction-heading {
   font-weight: 700;
