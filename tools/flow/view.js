@@ -54,7 +54,10 @@ export async function render(root){
 
       <div class="schema-header" style="margin-top:0;">
         <h2 style="margin:0;color:var(--text);font-size:20px;">Board</h2>
-        <span class="hero-pill soft">Oldest first · Click card JSON to expand</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="hero-pill soft">Oldest first · Click card JSON to expand</span>
+          <button id="flow-clear-all" class="btn btn-ghost btn-xs" style="padding:6px 10px;">Clear all cards</button>
+        </div>
       </div>
       <div id="flow-board" class="flow-board"></div>
     </section>
@@ -158,6 +161,12 @@ export async function render(root){
     if(!parsed.ok) return;
     addCard(parsed);
     statusEl.className='kv'; statusEl.textContent='Added to board.';
+  });
+
+  root.querySelector('#flow-clear-all').addEventListener('click', ()=>{
+    state.flow.cards = [];
+    saveState();
+    refreshBoard();
   });
 
   boardEl.addEventListener('click', e=>{
