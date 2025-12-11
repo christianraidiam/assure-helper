@@ -24,9 +24,8 @@ export async function render(root){
   const cards = state.flow.cards || [];
 
   root.innerHTML = `
-    <section class="section" style="max-width:1200px;margin-inline:auto;">
+    <section class="section" style="max-width:1400px;margin-inline:auto;">
       <div class="hero-block">
-        <span class="hero-pill">Flow Toolkit · Chronological</span>
         <h1 class="hero-title">Flow Board</h1>
         <p class="hero-sub">Decode JWTs or parse JSON, then pin them as tagged cards in order.</p>
       </div>

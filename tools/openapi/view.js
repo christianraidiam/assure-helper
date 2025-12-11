@@ -68,7 +68,7 @@ async function parseSpecText(rawText) {
 
 export async function render(root){
   root.innerHTML = `
-    <section class="section">
+    <section class="section" style="max-width:1300px;margin-inline:auto;">
       <h1>OpenAPI Validator (payload only)</h1>
 
       <div class="row">
