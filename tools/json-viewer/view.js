@@ -83,8 +83,7 @@ export async function render(root){
   root.innerHTML = `
     <section class="section" style="max-width:1400px;margin-inline:auto;">
       <div class="schema-header" style="align-items:flex-end;">
-        <div>
-          <div class="hero-pill soft">JSON validation & navigation</div>
+        <div style="flex:1;text-align:center;">
           <h1 style="margin:8px 0 4px;">JSON Viewer</h1>
           <p class="hero-sub" style="margin:0;">Validate instantly, then explore big payloads with collapsible keys.</p>
         </div>
