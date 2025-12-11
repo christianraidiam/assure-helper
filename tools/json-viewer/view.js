@@ -1,6 +1,18 @@
 import { state, saveState } from '../../app/state.js';
 import { safeParse, pretty, summarize } from '../../lib/json-utils.js';
 
+const esc = (s='')=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const highlightJSON = (obj)=>{
+  if(obj==null) return '';
+  const json = JSON.stringify(obj, null, 2);
+  return esc(json)
+    .replace(/(^|\n)(\s*)\"([^"]+)\":/g, (_, brk, sp, key)=>`${brk}${sp}<span class="j-key">"${key}"</span>:`)
+    .replace(/: \"([^"]*)\"/g, (_, val)=>`: <span class="j-str">"${esc(val)}"</span>`)
+    .replace(/: (-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, (_, num)=>`: <span class="j-num">${num}</span>`)
+    .replace(/: (true|false)/g, (_, b)=>`: <span class="j-bool">${b}</span>`)
+    .replace(/: null/g, ': <span class="j-null">null</span>');
+};
+
 export async function render(root){
   root.innerHTML = `
     <section class="section">
@@ -33,6 +45,6 @@ export async function render(root){
     }
     const sum = summarize(res.value);
     out.className='kv';
-    out.textContent = pretty({ valid:true, summary: sum, json: res.value });
+    out.innerHTML = highlightJSON({ valid:true, summary: sum, json: res.value });
   });
 }

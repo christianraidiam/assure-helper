@@ -13,11 +13,12 @@ const esc = (s='') => s
 /** Highlight the three JWT parts (header.payload.signature) */
 function highlightJWT(token) {
   if (!token) return '';
-  const [h = '', p = '', s = ''] = token.split('.', 3);
-  const rest = token.slice((h + (p ? '.' + p : '')).length + (s ? 2 : 1)); // in case there are extra dots
+  const parts = token.split('.');
+  const [h = '', p = '', s = ''] = parts;
+  const rest = parts.length > 3 ? '.' + parts.slice(3).join('.') : '';
   const seg = (txt, cls) => `<span class="jwt-${cls}">${esc(txt)}</span>`;
   const dot = `<span class="jwt-dot">.</span>`;
-  // Only show three segments; if anything else remains, show it plainly (rare)
+  // Only show three segments; if anything else remains, show it plainly (rare, e.g., malformed tokens)
   return [
     seg(h, 'header'),
     p ? dot + seg(p, 'payload') : '',
@@ -159,4 +160,3 @@ export async function render(root) {
   // Initial pass
   renderDecode();
 }
-

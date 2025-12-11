@@ -3,6 +3,18 @@ import { safeParse, pretty } from '../../lib/json-utils.js';
 import { listPaths, listMethods, listResponseStatuses, getJsonSchema, resolveLocalRef, collectRestrictions } from '../../lib/schema-utils.js';
 import { validate } from '../../lib/validate.js';
 
+const esc = (s='')=>s.replace(/[&<>]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const highlightJSON = (obj)=>{
+  if(obj==null) return '';
+  const json = JSON.stringify(obj, null, 2);
+  return esc(json)
+    .replace(/(^|\n)(\s*)\"([^"]+)\":/g, (_, brk, sp, key)=>`${brk}${sp}<span class="j-key">"${key}"</span>:`)
+    .replace(/: \"([^"]*)\"/g, (_, val)=>`: <span class="j-str">"${esc(val)}"</span>`)
+    .replace(/: (-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, (_, num)=>`: <span class="j-num">${num}</span>`)
+    .replace(/: (true|false)/g, (_, b)=>`: <span class="j-bool">${b}</span>`)
+    .replace(/: null/g, ': <span class="j-null">null</span>');
+};
+
 let specObj = null;
 let yamlModulePromise = null;
 
@@ -30,8 +42,6 @@ async function parseSpecText(rawText) {
     throw new Error('Spec is not valid JSON or YAML: ' + (err?.message || err));
   }
 }
-
-const esc = (s='')=>s.replace(/[&<>]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 export async function render(root){
   root.innerHTML = `
@@ -167,7 +177,7 @@ export async function render(root){
     if(schema && schema.$ref){ resolved = resolveLocalRef(specObj, schema); }
     if(resolved){
       schemaEl.className='kv schema-fixed';
-      schemaEl.textContent = JSON.stringify(resolved, null, 2);
+      schemaEl.innerHTML = highlightJSON(resolved);
     }else{
       schemaEl.className='kv empty schema-fixed'; schemaEl.textContent='No JSON schema found for this selection.';
     }
@@ -227,7 +237,7 @@ export async function render(root){
     }
     const res = validate(parsed.value, resolved, '$', specObj);
     resultEl.className='kv';
-    resultEl.textContent = JSON.stringify(res, null, 2);
+    resultEl.innerHTML = highlightJSON(res);
 
     const restrictions = collectRestrictions(specObj, resolved, '$');
     if(restrictions.length){
